@@ -1,8 +1,17 @@
+---
+title: Capacitor iOS Plugin Guide
+description: Capacitor iOS Plugin Guide
+url: /docs/plugins/ios
+contributors:
+  - mlynch
+  - jcesarmobile
+---
+
 # Capacitor iOS Plugin Guide
 
-Building Capacitor plugins for iOS involves writing Swift (or Objective-C) to interface with Apple's iOS SDKs.
+<p class="intro">Building Capacitor plugins for iOS involves writing Swift (or Objective-C) to interface with Apple's iOS SDKs.</p>
 
-Capacitor embraces standard iOS development tools for building iOS plugins. We believe that using Swift (or, Objective-C) directly will make it easier to use existing solutions on Stack Overflow, share work with existing native developers, and use platform features as soon as they are made available.
+<p class="intro">Capacitor embraces standard iOS development tools for building iOS plugins. We believe that using Swift (or, Objective-C) directly will make it easier to use existing solutions on Stack Overflow, share work with existing native developers, and use platform features as soon as they are made available.</p>
 
 ## Getting Started
 
@@ -53,7 +62,7 @@ For example, here is how you'd get data passed to your method:
 @objc func storeContact(_ call: CAPPluginCall) {
   let name = call.getString("yourName") ?? "default name"
   let address = call.getObject("address") ?? [:]
-  let isAwesome = call.getBoolean("isAwesome") ?? false
+  let isAwesome = call.getBool("isAwesome") ?? false
 
   guard let id = call.options["id"] as? String else {
     call.reject("Must provide an id")
@@ -186,7 +195,7 @@ To register your plugin with Capacitor, you'll need to create a new Objective-C 
 
 Finally, register the plugin by adding the required Capacitor plugin macros into your new `.m` file:
 
-```objc
+```objectivec
 #import <Capacitor/Capacitor.h>
 
 CAP_PLUGIN(MyPlugin, "MyPlugin",

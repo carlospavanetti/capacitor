@@ -1,4 +1,13 @@
-<plugin-platforms platforms="ios,android"></plugin-platforms>
+---
+title: Local Notifications
+description: Local Notifications API
+url: /docs/apis/local-notifications
+contributors:
+  - mlynch
+  - jcesarmobile
+---
+
+<plugin-platforms platforms="pwa,ios,android,electron"></plugin-platforms>
 
 # Local Notifications
 
@@ -14,7 +23,7 @@ Local Notifications are great for reminding the user about a change in the app s
 import { Plugins } from '@capacitor/core';
 const { LocalNotifications } = Plugins;
 
-LocalNotifications.schedule({
+const notifs = await LocalNotifications.schedule({
   notifications: [
     {
       title: "Title",
@@ -28,6 +37,23 @@ LocalNotifications.schedule({
     }
   ]
 });
+console.log('scheduled notifications', notifs);
+```
+
+## Local Notifications configuration (Android only)
+
+The local notification plugin allows the following configuration values to be added in `capacitor.config.json` for the Android platform:
+
+- `smallIcon`: It allows you to set the default icon for the local notification.
+- `iconColor`: It allows you to set the default color for the local notification icon.
+
+```json
+ "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon_config_sample",
+      "iconColor": "#488AFF"
+    }
+  }
 ```
 
 ## API

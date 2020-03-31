@@ -60,14 +60,14 @@ public class JSResult {
         return String(data: theJSONData,
                       encoding: .utf8)!
       } else {
-        print("[Capacitor Plugin Error] - \(call.pluginId) - \(call.method) - Unable to serialize plugin response as JSON." +
+        CAPLog.print("[Capacitor Plugin Error] - \(call.pluginId) - \(call.method) - Unable to serialize plugin response as JSON." +
           "Ensure that all data passed to success callback from module method is JSON serializable!")
         throw JSProcessingError.jsonSerializeError(call: call)
       }
     } catch let error as JSProcessingError {
       throw error
     } catch {
-      print("Unable to serialize plugin response as JSON: \(error.localizedDescription)")
+      CAPLog.print("Unable to serialize plugin response as JSON: \(error.localizedDescription)")
     }
     
     return "{}"
@@ -78,15 +78,17 @@ public class JSResultError {
   var call: JSCall
   var error: JSResultBody
   var message: String
+  var code: String?
   var errorMessage: String
-  
-  public init(call: JSCall, message: String, errorMessage: String, error: JSResultBody) {
+
+  public init(call: JSCall, message: String, errorMessage: String, error: JSResultBody, code: String? = nil) {
     self.call = call
     self.message = message
     self.errorMessage = errorMessage
     self.error = error
+    self.code = code
   }
-  
+
   /**
    * Return a linkable error that we can use to help users find help for common exceptions,
    * much like AngularJS back in the day.
@@ -103,13 +105,14 @@ public class JSResultError {
     var jsonResponse = "{}"
     
     error["message"] = self.message
+    error["code"] = self.code
     error["errorMessage"] = self.errorMessage
     //error["_exlink"] = getLinkableError(self.message)
     
     if let theJSONData = try? JSONSerialization.data(withJSONObject: error, options: []) {
       jsonResponse = String(data: theJSONData,
                             encoding: .utf8)!
-      print("ERROR MESSAGE: ", jsonResponse.prefix(512))
+      CAPLog.print("ERROR MESSAGE: ", jsonResponse.prefix(512))
     }
     
     return jsonResponse

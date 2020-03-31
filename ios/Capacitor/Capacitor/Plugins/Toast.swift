@@ -10,8 +10,9 @@ public class CAPToastPlugin : CAPPlugin {
       call.error("text must be provided and must be a string.")
       return
     }
-    let durationStyle = call.get("durationStyle", String.self, "long")!
-    let duration = durationStyle == "short" ? 1500 : 3000
+    let durationType = call.get("duration", String.self, "short")!
+    let duration = durationType == "long" ? 3500 : 2000
+    let position = call.get("position", String.self, "bottom")
     
     DispatchQueue.main.async {
       let vc = self.bridge!.viewController
@@ -26,17 +27,30 @@ public class CAPToastPlugin : CAPPlugin {
       lb.alpha = 0
       lb.layer.cornerRadius = 18
       lb.clipsToBounds  =  true
+      lb.lineBreakMode = .byWordWrapping
+      lb.numberOfLines = 0
       
       var expectedSizeTitle : CGSize = lb.sizeThatFits(maxSizeTitle)
       // UILabel can return a size larger than the max size when the number of lines is 1
       let minWidth = min(maxSizeTitle.width, expectedSizeTitle.width)
       let minHeight = min(maxSizeTitle.height, expectedSizeTitle.height)
       expectedSizeTitle = CGSize(width: minWidth, height: minHeight)
+        
+      let height = expectedSizeTitle.height+32
+      let y: CGFloat
+      if (position == "top") {
+        y = 40
+      } else if (position == "center") {
+        y = (vc.view.bounds.size.height/2) - (height/2)
+      } else {
+        y = vc.view.bounds.size.height - height - (height/2)
+      }
+
       lb.frame = CGRect(
         x: ((vc.view.bounds.size.width)/2) - ((expectedSizeTitle.width+32)/2),
-        y: (vc.view.bounds.size.height-(expectedSizeTitle.height+32)) - ((expectedSizeTitle.height+32)/2),
+        y: y,
         width: expectedSizeTitle.width+32,
-        height: expectedSizeTitle.height+32)
+        height: height)
       
       lb.padding = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
       self.toast = lb

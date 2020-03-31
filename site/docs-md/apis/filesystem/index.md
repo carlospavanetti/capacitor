@@ -1,8 +1,17 @@
+---
+title: Filesystem
+description: Filesystem API
+url: /docs/apis/filesystem
+contributors:
+  - mlynch
+  - jcesarmobile
+---
+
 <plugin-platforms platforms="pwa,ios,android,electron"></plugin-platforms>
 
 # Filesystem
 
-The Filsystem API provides a NodeJS-like API for working with files on the device.
+The Filesystem API provides a NodeJS-like API for working with files on the device.
 
 <plugin-api index="true" name="filesystem"></plugin-api>
 
@@ -20,14 +29,15 @@ import { Plugins, FilesystemDirectory, FilesystemEncoding } from '@capacitor/cor
 
 const { Filesystem } = Plugins;
 
-fileWrite() {
+async fileWrite() {
   try {
-    Filesystem.writeFile({
+    const result = await Filesystem.writeFile({
       path: 'secrets/text.txt',
       data: "This is a test",
       directory: FilesystemDirectory.Documents,
       encoding: FilesystemEncoding.UTF8
     })
+    console.log('Wrote file', result);
   } catch(e) {
     console.error('Unable to write file', e);
   }
@@ -63,7 +73,7 @@ async mkdir() {
     let ret = await Filesystem.mkdir({
       path: 'secrets',
       directory: FilesystemDirectory.Documents,
-      createIntermediateDirectories: false // like mkdir -p
+      recursive: false // like mkdir -p
     });
   } catch(e) {
     console.error('Unable to make directory', e);
@@ -74,7 +84,8 @@ async rmdir() {
   try {
     let ret = await Filesystem.rmdir({
       path: 'secrets',
-      directory: FilesystemDirectory.Documents
+      directory: FilesystemDirectory.Documents,
+      recursive: false,
     });
   } catch(e) {
     console.error('Unable to remove directory', e);
@@ -111,6 +122,32 @@ async readFilePath() {
     let data = await Filesystem.readFile({
       path: 'file:///var/mobile/Containers/Data/Application/22A433FD-D82D-4989-8BE6-9FC49DEA20BB/Documents/text.txt'
     })
+  }
+}
+
+async rename() {
+  try {
+    // This example moves the file within the same 'directory'
+    let ret = await Filesystem.rename({
+      from: 'text.txt',
+      to: 'text2.txt',
+      directory: FilesystemDirectory.Documents
+    });
+  } catch(e) {
+    console.error('Unable to rename file', e);
+  }
+}
+
+async copy() {
+  try {
+    // This example copies a file within the documents directory
+    let ret = await Filesystem.copy({
+      from: 'text.txt',
+      to: 'text2.txt',
+      directory: FilesystemDirectory.Documents
+    });
+  } catch(e) {
+    console.error('Unable to copy file', e);
   }
 }
 ```

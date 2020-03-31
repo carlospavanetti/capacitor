@@ -5,17 +5,16 @@ import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 import android.webkit.ValueCallback;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.content.SharedPreferences;
 
 import com.getcapacitor.android.BuildConfig;
@@ -24,7 +23,6 @@ import com.getcapacitor.plugin.App;
 import com.getcapacitor.plugin.Browser;
 import com.getcapacitor.plugin.Camera;
 import com.getcapacitor.plugin.Clipboard;
-import com.getcapacitor.plugin.Console;
 import com.getcapacitor.plugin.Device;
 import com.getcapacitor.plugin.Filesystem;
 import com.getcapacitor.plugin.Geolocation;
@@ -33,6 +31,7 @@ import com.getcapacitor.plugin.Keyboard;
 import com.getcapacitor.plugin.LocalNotifications;
 import com.getcapacitor.plugin.Modals;
 import com.getcapacitor.plugin.Network;
+import com.getcapacitor.plugin.Permissions;
 import com.getcapacitor.plugin.Photos;
 import com.getcapacitor.plugin.PushNotifications;
 import com.getcapacitor.plugin.Share;
@@ -44,6 +43,7 @@ import com.getcapacitor.ui.Toast;
 import com.getcapacitor.util.HostMask;
 
 import org.apache.cordova.CordovaInterfaceImpl;
+import org.apache.cordova.CordovaPreferences;
 import org.apache.cordova.PluginManager;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -81,10 +81,13 @@ public class Bridge {
   private static final String BUNDLE_LAST_PLUGIN_CALL_METHOD_NAME_KEY = "capacitorLastActivityPluginMethod";
   private static final String BUNDLE_PLUGIN_CALL_OPTIONS_SAVED_KEY = "capacitorLastPluginCallOptions";
   private static final String BUNDLE_PLUGIN_CALL_BUNDLE_KEY = "capacitorLastPluginCallBundle";
+  private static final String LAST_BINARY_VERSION_CODE = "lastBinaryVersionCode";
+  private static final String LAST_BINARY_VERSION_NAME = "lastBinaryVersionName";
 
   // The name of the directory we use to look for index.html and the rest of our web assets
   public static final String DEFAULT_WEB_ASSET_DIR = "public";
-  public static final String CAPACITOR_SCHEME_NAME = "http";
+  public static final String CAPACITOR_HTTP_SCHEME = "http";
+  public static final String CAPACITOR_HTTPS_SCHEME = "https";
   public static final String CAPACITOR_FILE_START = "/_capacitor_file_";
   public static final String CAPACITOR_CONTENT_START = "/_capacitor_content_";
 
@@ -101,6 +104,8 @@ public class Bridge {
   // A reference to the main WebView for the app
   private final WebView webView;
   public final CordovaInterfaceImpl cordovaInterface;
+  private CordovaPreferences preferences;
+  private BridgeWebViewClient webViewClient;
 
   // Our MessageHandler for sending and receiving data to the WebView
   private final MessageHandler msgHandler;
@@ -133,11 +138,13 @@ public class Bridge {
    * @param context
    * @param webView
    */
-  public Bridge(Activity context, WebView webView, List<Class<? extends Plugin>> initialPlugins, CordovaInterfaceImpl cordovaInterface, PluginManager pluginManager) {
+  public Bridge(Activity context, WebView webView, List<Class<? extends Plugin>> initialPlugins, CordovaInterfaceImpl cordovaInterface, PluginManager pluginManager, CordovaPreferences preferences) {
     this.context = context;
     this.webView = webView;
+    this.webViewClient = new BridgeWebViewClient(this);
     this.initialPlugins = initialPlugins;
     this.cordovaInterface = cordovaInterface;
+    this.preferences = preferences;
 
     // Start our plugin execution threads and handlers
     handlerThread.start();
@@ -172,7 +179,10 @@ public class Bridge {
 
     String authority = Config.getString("server.hostname", "localhost");
     authorities.add(authority);
-    localUrl = CAPACITOR_SCHEME_NAME + "://" + authority;
+
+    String scheme = this.getScheme();
+
+    localUrl = scheme + "://" + authority;
 
     if (appUrlConfig != null) {
       try {
@@ -180,9 +190,16 @@ public class Bridge {
         authorities.add(appUrlObject.getAuthority());
       } catch (Exception ex) {
       }
-
+      localUrl = appUrlConfig;
+      appUrl = appUrlConfig;
       if (BuildConfig.DEBUG) {
-        Toast.show(getContext(), "Using app server " + appUrlConfig.toString());
+        Toast.show(getContext(), "Using app server " + appUrlConfig);
+      }
+    } else {
+      appUrl = localUrl;
+      // custom URL schemes requires path ending with /
+      if (!scheme.equals(Bridge.CAPACITOR_HTTP_SCHEME) && !scheme.equals(CAPACITOR_HTTPS_SCHEME)) {
+        appUrl += "/";
       }
     }
 
@@ -192,50 +209,64 @@ public class Bridge {
     localServer = new WebViewLocalServer(context, this, getJSInjector(), authorities, html5mode);
     localServer.hostAssets(DEFAULT_WEB_ASSET_DIR);
 
-
-    appUrl = appUrlConfig == null ? localUrl : appUrlConfig;
-
     Log.d(LOG_TAG, "Loading app at " + appUrl);
 
     webView.setWebChromeClient(new BridgeWebChromeClient(this));
-    webView.setWebViewClient(new WebViewClient() {
-      @Override
-      public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-        return localServer.shouldInterceptRequest(request);
-      }
+    webView.setWebViewClient(this.webViewClient);
 
-      @Override
-      public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-        Uri url = request.getUrl();
-        return launchIntent(url);
+    if (!isDeployDisabled() && !isNewBinary()) {
+      SharedPreferences prefs = getContext().getSharedPreferences(com.getcapacitor.plugin.WebView.WEBVIEW_PREFS_NAME, Activity.MODE_PRIVATE);
+      String path = prefs.getString(com.getcapacitor.plugin.WebView.CAP_SERVER_PATH, null);
+      if (path != null && !path.isEmpty() && new File(path).exists()) {
+        setServerBasePath(path);
       }
-
-      @Override
-      public boolean shouldOverrideUrlLoading(WebView view, String url) {
-        return launchIntent(Uri.parse(url));
-      }
-
-      private boolean launchIntent(Uri url) {
-        if (!url.toString().contains(appUrl) && !appAllowNavigationMask.matches(url.getHost())) {
-          try {
-            Intent openIntent = new Intent(Intent.ACTION_VIEW, url);
-            getContext().startActivity(openIntent);
-          } catch (ActivityNotFoundException e) {
-            // TODO - trigger an event
-          }
-          return true;
-        }
-        return false;
-      }
-    });
-
-    SharedPreferences prefs = getContext().getSharedPreferences(com.getcapacitor.plugin.WebView.WEBVIEW_PREFS_NAME, Activity.MODE_PRIVATE);
-    String path = prefs.getString(com.getcapacitor.plugin.WebView.CAP_SERVER_PATH, null);
-    if (path != null && !path.isEmpty() && new File(path).exists()) {
-      setServerBasePath(path);
     }
     // Get to work
     webView.loadUrl(appUrl);
+  }
+
+  public boolean launchIntent(Uri url) {
+    if (!url.toString().contains(appUrl) && !appAllowNavigationMask.matches(url.getHost())) {
+      try {
+        Intent openIntent = new Intent(Intent.ACTION_VIEW, url);
+        getContext().startActivity(openIntent);
+      } catch (ActivityNotFoundException e) {
+        // TODO - trigger an event
+      }
+      return true;
+    }
+    return false;
+  }
+
+
+  private boolean isNewBinary() {
+    String versionCode = "";
+    String versionName = "";
+    SharedPreferences prefs = getContext().getSharedPreferences(com.getcapacitor.plugin.WebView.WEBVIEW_PREFS_NAME, Activity.MODE_PRIVATE);
+    String lastVersionCode = prefs.getString(LAST_BINARY_VERSION_CODE, null);
+    String lastVersionName = prefs.getString(LAST_BINARY_VERSION_NAME, null);
+
+    try {
+      PackageInfo pInfo = getContext().getPackageManager().getPackageInfo(getContext().getPackageName(), 0);
+      versionCode = Integer.toString(pInfo.versionCode);
+      versionName = pInfo.versionName;
+    } catch(Exception ex) {
+      Log.e(LOG_TAG, "Unable to get package info", ex);
+    }
+
+    if (!versionCode.equals(lastVersionCode) || !versionName.equals(lastVersionName)) {
+      SharedPreferences.Editor editor = prefs.edit();
+      editor.putString(LAST_BINARY_VERSION_CODE, versionCode);
+      editor.putString(LAST_BINARY_VERSION_NAME, versionName);
+      editor.putString(com.getcapacitor.plugin.WebView.CAP_SERVER_PATH, "");
+      editor.apply();
+      return true;
+    }
+    return false;
+  }
+
+  public boolean isDeployDisabled() {
+    return preferences.getBoolean("DisableDeploy", false);
   }
 
 
@@ -284,6 +315,14 @@ public class Bridge {
     return intentUri;
   }
 
+  /**
+   * Get scheme that is used to serve content
+   * @return
+   */
+  public String getScheme() {
+      return Config.getString("server.androidScheme", CAPACITOR_HTTP_SCHEME);
+  }
+
   /*
   public void registerPlugins() {
     Log.d(LOG_TAG, "Finding plugins");
@@ -320,6 +359,31 @@ public class Bridge {
     if (Config.getBoolean("android.allowMixedContent", false)) {
       settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
     }
+
+    String appendUserAgent = Config.getString("android.appendUserAgent" , Config.getString("appendUserAgent", null));
+    if (appendUserAgent != null) {
+      String defaultUserAgent = settings.getUserAgentString();
+      settings.setUserAgentString(defaultUserAgent + " " + appendUserAgent);
+    }
+    String overrideUserAgent = Config.getString("android.overrideUserAgent" , Config.getString("overrideUserAgent", null));
+    if (overrideUserAgent != null) {
+      settings.setUserAgentString(overrideUserAgent);
+    }
+
+    String backgroundColor = Config.getString("android.backgroundColor" , Config.getString("backgroundColor", null));
+    try {
+      if (backgroundColor != null) {
+        webView.setBackgroundColor(Color.parseColor(backgroundColor));
+      }
+    } catch (IllegalArgumentException ex) {
+      Log.d(LogUtils.getCoreTag(), "WebView background color not applied");
+    }
+    boolean defaultDebuggable = false;
+    if (isDevMode()) {
+      defaultDebuggable = true;
+    }
+
+    WebView.setWebContentsDebuggingEnabled(Config.getBoolean("android.webContentsDebuggingEnabled", defaultDebuggable));
   }
 
   /**
@@ -332,7 +396,6 @@ public class Bridge {
     this.registerPlugin(Browser.class);
     this.registerPlugin(Camera.class);
     this.registerPlugin(Clipboard.class);
-    this.registerPlugin(Console.class);
     this.registerPlugin(Device.class);
     this.registerPlugin(LocalNotifications.class);
     this.registerPlugin(Filesystem.class);
@@ -341,6 +404,7 @@ public class Bridge {
     this.registerPlugin(Keyboard.class);
     this.registerPlugin(Modals.class);
     this.registerPlugin(Network.class);
+    this.registerPlugin(Permissions.class);
     this.registerPlugin(Photos.class);
     this.registerPlugin(PushNotifications.class);
     this.registerPlugin(Share.class);
@@ -458,10 +522,11 @@ public class Bridge {
             if (call.isSaved()) {
               saveCall(call);
             }
-          } catch(PluginLoadException | InvalidPluginMethodException | PluginInvocationException ex) {
+          } catch(PluginLoadException | InvalidPluginMethodException ex) {
             Log.e(LOG_TAG, "Unable to execute plugin method", ex);
-          } catch(Exception ex) {
+          } catch (Exception ex) {
             Log.e(LOG_TAG, "Serious error executing plugin", ex);
+            throw new RuntimeException(ex);
           }
         }
       };
@@ -590,14 +655,14 @@ public class Bridge {
   protected void storeDanglingPluginResult(PluginCall call, PluginResult result) {
     PluginHandle appHandle = getPlugin("App");
     App appPlugin = (App) appHandle.getInstance();
-    appPlugin.fireRestoredResult(result.getWrappedResult(call));
+    appPlugin.fireRestoredResult(result);
   }
 
   /**
    * Restore any saved bundle state data
    * @param savedInstanceState
    */
-  protected void restoreInstanceState(Bundle savedInstanceState) {
+  public void restoreInstanceState(Bundle savedInstanceState) {
     String lastPluginId = savedInstanceState.getString(BUNDLE_LAST_PLUGIN_ID_KEY);
     String lastPluginCallMethod = savedInstanceState.getString(BUNDLE_LAST_PLUGIN_CALL_METHOD_NAME_KEY);
     String lastOptionsJson = savedInstanceState.getString(BUNDLE_PLUGIN_CALL_OPTIONS_SAVED_KEY);
@@ -663,8 +728,8 @@ public class Bridge {
   public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
     PluginHandle plugin = getPluginWithRequestCode(requestCode);
 
-    if (plugin == null || requestCode == 0) {
-      Log.d(LOG_TAG, "Unable to find a Capacitor plugin to handle requestCode, try with Cordova plugins " + requestCode);
+    if (plugin == null) {
+      Log.d(LOG_TAG, "Unable to find a Capacitor plugin to handle permission requestCode, trying Cordova plugins " + requestCode);
       try {
         cordovaInterface.onRequestPermissionResult(requestCode, permissions, grantResults);
       } catch (JSONException e) {
@@ -765,6 +830,15 @@ public class Bridge {
     }
   }
 
+  /**
+   * Handle onDestroy lifecycle event and notify the plugins
+   */
+  public void onDestroy() {
+    for (PluginHandle plugin : plugins.values()) {
+      plugin.getInstance().handleOnDestroy();
+    }
+  }
+
   public void onBackPressed() {
     PluginHandle appHandle = getPlugin("App");
     if (appHandle != null) {
@@ -824,4 +898,17 @@ public class Bridge {
   public WebViewLocalServer getLocalServer() {
     return localServer;
   }
+
+  public HostMask getAppAllowNavigationMask() {
+    return appAllowNavigationMask;
+  }
+
+  public BridgeWebViewClient getWebViewClient() {
+    return this.webViewClient;
+  }
+
+  public void setWebViewClient(BridgeWebViewClient client) {
+    this.webViewClient = client;
+  }
+
 }

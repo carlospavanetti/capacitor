@@ -1,6 +1,17 @@
+---
+title: Capacitor Plugins
+description: Capacitor Plugins
+url: /docs/plugins
+contributors:
+  - mlynch
+  - jcesarmobile
+---
+
 # Capacitor Plugins
 
-Plugins in Capacitor enable JavaScript to interface directly with Native APIs.
+<p class="intro">Plugins in Capacitor enable JavaScript to interface directly with Native APIs.</p>
+
+## How Capacitor Plugins Work
 
 With Plugins, a web app can access the full power of the Native APIs, doing everything a traditional native app can. Plugins are especially great for wrapping common native operations that might use very different APIs across platforms, while exposing a consistent, cross-platform API to JavaScript.
 
@@ -23,7 +34,7 @@ This starts a wizard prompting you for information about your new plugin. For ex
 ```bash
 npx @capacitor/cli plugin:generate
 ✏️  Creating new Capacitor plugin
-? Plugin NPM name (snake-case): my-plugin
+? Plugin NPM name (kebab-case): my-plugin
 ? Plugin id (domain-style syntax. ex: com.example.plugin) com.ionicframework.myplugin
 ? Plugin class name (ex: AwesomePlugin) MyPlugin
 ? description:
@@ -33,7 +44,7 @@ npx @capacitor/cli plugin:generate
 ? package.json will be created, do you want to continue? (Y/n)
 ```
 
- - `Plugin NPM name`: a snake-case name of a package that will be available on npm (not a strict requirement if your package will be on a private npm repo).
+ - `Plugin NPM name`: a kebab-case name of a package that will be available on npm (not a strict requirement if your package will be on a private npm repo).
  - `Plugin ID`: a domain-style identifier. It is primarily used for the package name in Java.
  - `Plugin Class Name`: the initial name of the class used in Java and Swift. See the additional note about class names in the [iOS Plugin](ios/) section of this guide.
  - `description`: a brief introduction about the plugin.

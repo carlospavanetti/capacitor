@@ -112,7 +112,7 @@ export class WebPlugin {
     };
   }
 
-  removeListener(eventName: string, listenerFunc: ListenerCallback): void {
+  private removeListener(eventName: string, listenerFunc: ListenerCallback): void {
     let listeners = this.listeners[eventName];
     if (!listeners) {
       return;
@@ -126,6 +126,14 @@ export class WebPlugin {
     if (!this.listeners[eventName].length) {
       this.removeWindowListener(this.windowListeners[eventName]);
     }
+  }
+
+  removeAllListeners(): void {
+    this.listeners = {};
+    for (const listener in this.windowListeners) {
+      this.removeWindowListener(this.windowListeners[listener]);
+    }
+    this.windowListeners = {};
   }
 
   notifyListeners(eventName: string, data: any): void {

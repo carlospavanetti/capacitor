@@ -45,7 +45,7 @@ export class Config implements CliConfig {
   ios = {
     name: 'ios',
     minVersion: '11.0',
-    cordovaSwiftVersion: '4.0',
+    cordovaSwiftVersion: '5.0',
     platformDir: '',
     webDir: 'public',
     webDirAbs: '',
@@ -90,6 +90,9 @@ export class Config implements CliConfig {
       templateName: 'app-template',
       templateDir: '',
       pluginsTemplateDir: ''
+    },
+    server: {
+      cleartext: false
     }
   };
 
@@ -193,7 +196,10 @@ export class Config implements CliConfig {
   }
 
   private initWindowsConfig() {
-    this.windows.androidStudioPath = this.app.windowsAndroidStudioPath && this.app.windowsAndroidStudioPath;
+    if (this.cli.os !== OS.Windows) {
+        return;
+    }
+    this.windows.androidStudioPath = this.app.windowsAndroidStudioPath;
   }
 
   private initLinuxConfig() {
@@ -328,7 +334,7 @@ export class Config implements CliConfig {
     if (platformName === 'web') {
       logFatal(`Could not find the web platform directory. Make sure ${chalk.bold(this.app.webDir)} exists.`);
     }
-    logFatal(`${chalk.bold(platformName)}" platform has not been created. Use "capacitor add ${platformName}" to add the platform project.`);
+    logFatal(`${chalk.bold(platformName)}" platform has not been created. Use "npx cap add ${platformName}" to add the platform project.`);
   }
 }
 

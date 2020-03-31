@@ -5,13 +5,14 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
+
+import androidx.fragment.app.Fragment;
 
 import com.getcapacitor.android.R;
 import com.getcapacitor.cordova.MockCordovaInterfaceImpl;
@@ -103,7 +104,9 @@ public class BridgeFragment extends Fragment {
 
     pluginManager = mockWebView.getPluginManager();
     cordovaInterface.onCordovaInit(pluginManager);
-    bridge = new Bridge(this.getActivity(), webView, initialPlugins, cordovaInterface, pluginManager);
+
+    preferences = new CordovaPreferences();
+    bridge = new Bridge(this.getActivity(), webView, initialPlugins, cordovaInterface, pluginManager, preferences);
 
     if (startDir != null) {
       bridge.setServerAssetPath(startDir);

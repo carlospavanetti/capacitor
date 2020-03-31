@@ -1,3 +1,12 @@
+---
+title: Storage
+description: Storage API
+url: /docs/apis/storage
+contributors:
+  - mlynch
+  - jcesarmobile
+---
+
 <plugin-platforms platforms="pwa,ios,android,electron"></plugin-platforms>
 
 # Storage
@@ -5,6 +14,8 @@
 The Storage API provides a key-value store for simple data.
 
 Mobile OS's may periodically clear data set in `window.localStorage`, so this API should be used instead of `window.localStorage`. This API will fall back to using `localStorage` when running as a Progressive Web App.
+
+On iOS this plugin will use [UserDefaults](https://developer.apple.com/documentation/foundation/userdefaults) and on Android [SharedPreferences](https://developer.android.com/reference/android/content/SharedPreferences). Stored data is cleared if the app is uninstalled.
 
 Note: this API is not meant for high-performance data storage applications. Take a look at using SQLite or a separate data engine if your application will store a lot of items, have high read/write load, or require complex querying.
 
@@ -20,6 +31,11 @@ This method can also be used to store non-string values, such as numbers and boo
 ## Example
 
 ```typescript
+import { Plugins } from '@capacitor/core';
+
+const { Storage } = Plugins;
+
+
 // JSON "set" example
 async setObject() {
   await Storage.set({
@@ -45,7 +61,7 @@ async setItem() {
 }
 
 async getItem() {
-  const value = await Storage.get({ key: 'name' });
+  const { value } = await Storage.get({ key: 'name' });
   console.log('Got item: ', value);
 }
 
@@ -54,7 +70,7 @@ async removeItem() {
 }
 
 async keys() {
-  const keys = await Storage.keys();
+  const { keys } = await Storage.keys();
   console.log('Got keys: ', keys);
 }
 

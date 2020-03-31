@@ -84,6 +84,10 @@ public class PluginCall {
   }
 
   public void error(String msg, Exception ex) {
+    error(msg, null, ex);
+  }
+
+  public void error(String msg, String code, Exception ex) {
     PluginResult errorResult = new PluginResult();
 
     if(ex != null) {
@@ -92,6 +96,7 @@ public class PluginCall {
 
     try {
       errorResult.put("message", msg);
+      errorResult.put("code", code);
     } catch (Exception jsonEx) {
       Log.e(LogUtils.getPluginTag(), jsonEx.getMessage());
     }
@@ -105,6 +110,10 @@ public class PluginCall {
 
   public void reject(String msg, Exception ex) {
     error(msg, ex);
+  }
+
+  public void reject(String msg, String code) {
+    error(msg, code, null);
   }
 
   public void reject(String msg) {
@@ -167,6 +176,12 @@ public class PluginCall {
     if(value instanceof Float) {
       return (Float) value;
     }
+    if(value instanceof Double) {
+      return ((Double) value).floatValue();
+    }
+    if(value instanceof Integer) {
+      return ((Integer) value).floatValue();
+    }
     return defaultValue;
   }
 
@@ -179,6 +194,12 @@ public class PluginCall {
 
     if(value instanceof Double) {
       return (Double) value;
+    }
+    if(value instanceof Float) {
+      return ((Float) value).doubleValue();
+    }
+    if(value instanceof Integer) {
+      return ((Integer) value).doubleValue();
     }
     return defaultValue;
   }
@@ -274,4 +295,3 @@ public class PluginCall {
     PluginCallDataTypeException(String m) { super(m); }
   }
 }
-

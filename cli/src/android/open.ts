@@ -1,7 +1,7 @@
 import { Config } from '../config';
 import { OS } from '../definitions';
-import { logError, logInfo } from '../common';
-import { existsAsync } from '../util/fs';
+import { logError, logInfo, runCommand } from '../common';
+import { existsAsync, existsSync } from '../util/fs';
 import { resolve } from 'path';
 
 export async function openAndroid(config: Config) {
@@ -20,16 +20,28 @@ export async function openAndroid(config: Config) {
       await opn(dir, { app: 'android studio', wait: false });
       break;
     case OS.Windows:
+      let androidStudioPath = config.windows.androidStudioPath;
       try {
-        await opn(dir, { app: config.windows.androidStudioPath, wait: false });
+        if (!existsSync(androidStudioPath)) {
+          let commandResult = await runCommand('REG QUERY "HKEY_LOCAL_MACHINE\\SOFTWARE\\Android Studio" /v Path');
+          commandResult = commandResult.replace(/(\r\n|\n|\r)/gm, '');
+          const ix = commandResult.indexOf('REG_SZ');
+          if (ix > 0) {
+            androidStudioPath = commandResult.substring(ix + 6).trim() + '\\bin\\studio64.exe';
+          }
+        }
       } catch (e) {
-        logError('Unable to launch Android Studio. Make sure the latest version of Android Studio is installed, or,' +
-                 'if you\'ve installed Android Studio in a custom location, configure "windowsAndroidStudioPath" ' +
-                 'your capacitor.config.json to point to the location of studio64.exe, using JavaScript-escaped paths:\n' +
+        androidStudioPath = '';
+      }
+      if (androidStudioPath) {
+        opn(dir, { app: androidStudioPath, wait: false });
+      } else {
+        logError('Android Studio not found. Make sure it\'s installed and configure "windowsAndroidStudioPath" ' +
+                 'in your capacitor.config.json to point to the location of studio64.exe, using JavaScript-escaped paths:\n' +
 
                  'Example:\n' +
                  '{\n' +
-                    '  "windowsAndroidStudioPath": "H:\\\\Android Studio\\\\bin\\\\studio64.exe"\n' +
+                    '  "windowsAndroidStudioPath": "C:\\\\Program Files\\\\Android\\\\Android Studio\\\\bin\\\\studio64.exe"\n' +
                   '}');
       }
       break;
@@ -45,7 +57,7 @@ export async function openAndroid(config: Config) {
       };
 
       try {
-        await opn(dir, { app: config.linux.androidStudioPath, wait: false });
+        await opn(dir, { app: config.linux.androidStudioPath, wait: true });
       } catch (e) {
         linuxError();
       }

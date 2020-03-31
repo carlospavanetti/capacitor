@@ -1,3 +1,13 @@
+---
+title: Clipboard
+description: Clipboard API
+url: /docs/apis/clipboard
+contributors:
+  - mlynch
+  - jcesarmobile
+---
+
+
 <plugin-platforms platforms="pwa,ios,android,electron"></plugin-platforms>
 
 # Clipboard
@@ -18,10 +28,8 @@ Clipboard.write({
   string: "Hello, Moto"
 });
 
-let str = await Clipboard.read({
-  type: "string"
-});
-console.log('Got string from clipboard:', str.value);
+let result = await Clipboard.read();
+console.log('Got', result.type, 'from clipboard:', result.value);
 ```
 
 ## API

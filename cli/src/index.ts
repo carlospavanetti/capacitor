@@ -4,6 +4,7 @@ import chalk from 'chalk';
 import { createCommand } from './tasks/create';
 import { initCommand } from './tasks/init';
 import { copyCommand } from './tasks/copy';
+import { listCommand } from './tasks/list';
 import { updateCommand } from './tasks/update';
 import { openCommand } from './tasks/open';
 import { serveCommand } from './tasks/serve';
@@ -36,7 +37,7 @@ export function run(process: NodeJS.Process, cliBinDir: string) {
   program
     .command('init [appName] [appId]')
     .description('Initializes a new Capacitor project in the current directory')
-    .option('--web-dir [value]', 'Optional: Directory of your projects built web assets', 'www')
+    .option('--web-dir [value]', 'Optional: Directory of your projects built web assets', config.app.webDir ? config.app.webDir : 'www')
     .option('--npm-client [npmClient]', 'Optional: npm client to use for dependency installation')
     .action((appName, appId, { webDir, npmClient }) => {
       return initCommand(config, appName, appId, webDir, npmClient);
@@ -51,16 +52,18 @@ export function run(process: NodeJS.Process, cliBinDir: string) {
 
   program
     .command('sync [platform]')
-    .description('updates + copy')
-    .action(platform => {
-      return syncCommand(config, platform);
+    .description('copy + update')
+    .option('--deployment', 'Optional: if provided, Podfile.lock won\'t be deleted and pod install will use --deployment option')
+    .action((platform, { deployment }) => {
+      return syncCommand(config, platform, deployment);
     });
 
   program
     .command('update [platform]')
     .description(`updates the native plugins and dependencies based in package.json`)
-    .action(platform => {
-      return updateCommand(config, platform);
+    .option('--deployment', 'Optional: if provided, Podfile.lock won\'t be deleted and pod install will use --deployment option')
+    .action((platform, { deployment }) => {
+      return updateCommand(config, platform, deployment);
     });
 
   program
@@ -82,6 +85,13 @@ export function run(process: NodeJS.Process, cliBinDir: string) {
     .description('add a native platform project')
     .action((platform) => {
       return addCommand(config, platform);
+    });
+
+  program
+    .command('ls [platform]')
+    .description('list installed Cordova and Capacitor plugins')
+    .action(platform => {
+      return listCommand(config, platform);
     });
 
   program

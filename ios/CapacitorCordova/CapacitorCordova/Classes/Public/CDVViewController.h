@@ -21,7 +21,9 @@
 
 @interface CDVViewController : UIViewController
 
+@property (nonatomic, readonly, strong) NSMutableDictionary* pluginObjects;
 @property (nonatomic, readonly, strong) NSMutableDictionary* settings;
+@property (nonatomic, readonly, weak) UIView* webView;
 
 - (id) getCommandInstance:(NSString*)className;
 

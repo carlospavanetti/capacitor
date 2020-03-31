@@ -19,17 +19,19 @@ public class App extends Plugin {
   private static final String EVENT_URL_OPEN = "appUrlOpen";
   private static final String EVENT_STATE_CHANGE = "appStateChange";
   private static final String EVENT_RESTORED_RESULT = "appRestoredResult";
+  private boolean isActive = false;
 
   public void fireChange(boolean isActive) {
     Log.d(getLogTag(), "Firing change: " + isActive);
     JSObject data = new JSObject();
     data.put("isActive", isActive);
-    notifyListeners(EVENT_STATE_CHANGE, data, true);
+    this.isActive = isActive;
+    notifyListeners(EVENT_STATE_CHANGE, data, false);
   }
 
   public void fireRestoredResult(PluginResult result) {
     Log.d(getLogTag(), "Firing restored result");
-    notifyListeners(EVENT_RESTORED_RESULT, result.getData(), true);
+    notifyListeners(EVENT_RESTORED_RESULT, result.getWrappedResult(), true);
   }
 
   public void fireBackButton() {
@@ -58,6 +60,13 @@ public class App extends Plugin {
     } else {
       call.success();
     }
+  }
+
+  @PluginMethod()
+  public void getState(PluginCall call) {
+    JSObject data = new JSObject();
+    data.put("isActive", this.isActive);
+    call.success(data);
   }
 
   @PluginMethod()
@@ -93,15 +102,24 @@ public class App extends Plugin {
       return;
     }
 
+    JSObject ret = new JSObject();
     final PackageManager manager = getContext().getPackageManager();
-    final Intent launchIntent = new Intent(Intent.ACTION_VIEW);
+    Intent launchIntent = new Intent(Intent.ACTION_VIEW);
     launchIntent.setData(Uri.parse(url));
 
     try {
       getActivity().startActivity(launchIntent);
+      ret.put("completed", true);
     } catch(Exception ex) {
-      call.error("Unable to open url", ex);
+      launchIntent = manager.getLaunchIntentForPackage(url);
+      try {
+        getActivity().startActivity(launchIntent);
+        ret.put("completed", true);
+      } catch(Exception expgk) {
+        ret.put("completed", false);
+      }
     }
+    call.success(ret);
   }
 
   /**

@@ -1,6 +1,15 @@
+---
+title: Development Workflow 
+description: Capacitor Workflow
+url: /docs/basics/workflow
+contributors:
+  - dotnetkow
+  - mlynch
+---
+
 # Capacitor Workflow
 
-The Capacitor workflow involves a few consistent tasks:
+<p class="intro">The Capacitor workflow involves a few consistent tasks:</p>
 
 ## 1. Develop and build your Web App
 
@@ -38,19 +47,32 @@ Capacitor uses the Native IDEs to build, simulate, and run your app. To open it 
 npx cap open
 ```
 
-## 4. Periodic Maintenance
+## 4. Update the native project
 
-Your Capacitor app needs periodic maintenance, such as updating dependencies and installing new plugins.
-
-To update your app's dependencies, run
-
-```bash
-npx cap update
-```
+In some cases, the Capacitor app needs to be updated, such as when installing new plugins.
 
 To install new plugins (including Cordova ones), run
 
 ```bash
 npm install really-cool-plugin
 npx cap update
+```
+
+## 5. Updating Capacitor
+
+To check if there are any new updates to Capacitor itself, run `npx cap doctor` to print out the current installed dependencies as well view the latest available.
+
+To update Capacitor Core and CLI:
+
+```bash
+npm update @capacitor/cli
+npm update @capacitor/core
+```
+
+To update any or all of the platforms you are using:
+
+```bash
+npm update @capacitor/ios
+npm update @capacitor/android
+npm update @capacitor/electron
 ```

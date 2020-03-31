@@ -9,6 +9,7 @@ export class SiteHeader {
 
   @State() isMobileMenuShown: boolean;
   @State() isDropdownShown: boolean;
+  @State() isScrolled = false;
 
   @Listen('window:resize')
   handleResize() {
@@ -19,6 +20,19 @@ export class SiteHeader {
         this.el.classList.remove('show-mobile-menu');
         document.body.classList.remove('no-scroll');
         this.isMobileMenuShown = false;
+      }
+    });
+  }
+
+  @Listen('window:scroll')
+  handleScroll(event) {
+    requestAnimationFrame(() => {
+      if (event.target.documentElement.scrollTop !== 0 && !this.isScrolled) {
+        this.el.classList.add('scrolled');
+        this.isScrolled = true;
+      } else if (event.target.documentElement.scrollTop === 0 && this.isScrolled) {
+        this.el.classList.remove('scrolled');
+        this.isScrolled = false;
       }
     });
   }
@@ -67,7 +81,6 @@ export class SiteHeader {
 
         <stencil-route-link url="/" class="logo-link">
           <div class="logo"></div>
-          <b class="version">Beta</b>
         </stencil-route-link>
 
         <div class="header-menu">
@@ -93,18 +106,18 @@ export class SiteHeader {
                 <a href="/docs/community/plugins/">Plugins</a>
               </li>
               <li class="dropdown__item">
-                <a href="https://forum.getcapacitor.com/">Forum</a>
+                <a href="https://forum.ionicframework.com/" target="_blank">Forum</a>
               </li>
               <li class="dropdown__item">
-                <a href="https://getcapacitor.herokuapp.com/">Slack</a>
+                <a href="https://getcapacitor.herokuapp.com/" target="_blank">Slack</a>
               </li>
               <li class="dropdown__item">
-                <a href="https://twitter.com/getcapacitor">Twitter</a>
+                <a href="https://twitter.com/getcapacitor" target="_blank">Twitter</a>
               </li>
             </ul>
           </span>
 
-          <a class="link link--external" href="https://github.com/ionic-team/capacitor">
+          <a class="link link--external" href="https://github.com/ionic-team/capacitor" target="_blank">
             GitHub
             <app-icon name="targetblank"></app-icon>
           </a>

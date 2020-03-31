@@ -1,9 +1,8 @@
 const { app, BrowserWindow, Menu } = require('electron');
 const isDevMode = require('electron-is-dev');
-const { injectCapacitor, CapacitorSplashScreen } = require('@capacitor/electron');
+const { CapacitorSplashScreen, configCapacitor } = require('@capacitor/electron');
 
 const path = require('path');
-global.__basedir = path.resolve(__dirname);
 
 // Place holders for our windows so they don't get garbage collected.
 let mainWindow = null;
@@ -35,7 +34,13 @@ async function createWindow () {
     height: 920,
     width: 1600,
     show: false,
+    webPreferences: {
+      nodeIntegration: true,
+      preload: path.join(__dirname, 'node_modules', '@capacitor', 'electron', 'dist', 'electron-bridge.js')
+    }
   });
+
+  configCapacitor(mainWindow);
 
   if (isDevMode) {
     // Set our above template to the Menu Object if we are in development mode, dont want users having the devtools.
@@ -48,7 +53,7 @@ async function createWindow () {
     splashScreen = new CapacitorSplashScreen(mainWindow);
     splashScreen.init();
   } else {
-    mainWindow.loadURL(await injectCapacitor(`file://${__dirname}/app/index.html`), {baseURLForDataURL: `file://${__dirname}/app/`});
+    mainWindow.loadURL(`file://${__dirname}/app/index.html`);
     mainWindow.webContents.on('dom-ready', () => {
       mainWindow.show();
     });

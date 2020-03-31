@@ -1,3 +1,12 @@
+---
+title: Modals
+description: Modals API
+url: /docs/apis/modals
+contributors:
+  - mlynch
+  - jcesarmobile
+---
+
 <plugin-platforms platforms="pwa,ios,android,electron"></plugin-platforms>
 
 # Modals
@@ -9,7 +18,7 @@ well as Action Sheets.
 
 ## Example
 
-```javascript
+```typescript
 import { Plugins } from '@capacitor/core';
 
 const { Modals } = Plugins;

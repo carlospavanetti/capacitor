@@ -2,7 +2,6 @@ import { PluginRegistry } from './core-plugin-definitions';
 
 export interface Plugin {
   addListener(eventName: string, listenerFunc: Function): PluginListenerHandle;
-  removeListener(eventName: string, listenerFunc: Function): void;
   requestPermissions?: () => Promise<PermissionsRequestResult>;
 }
 
@@ -71,7 +70,8 @@ export interface Capacitor {
   isNative?: boolean;
   platform?: string;
   isPluginAvailable: (name: string) => boolean;
-  convertFileSrc:(filePath: string) => string;
+  convertFileSrc: (filePath: string) => string;
+  getPlatform: () => string;
   toNative?: (pluginId: string, methodName: string, options: any, storedCallback?: StoredCallback) => void;
   fromNative?: (result: PluginResult) => void;
   withPlugin?: (pluginId: string, fn: Function) => void;

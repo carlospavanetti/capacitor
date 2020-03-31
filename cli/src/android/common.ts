@@ -1,10 +1,10 @@
 import { runCommand } from '../common';
 import { Config } from '../config';
-import { getPluginPlatform, Plugin, PluginType } from '../plugin';
-import { mkdirs } from 'fs-extra';
-import { copyAsync, existsAsync, existsSync, readFileAsync, removeAsync, writeFileAsync } from '../util/fs';
-import { resolve, join } from 'path';
 import { getIncompatibleCordovaPlugins } from '../cordova';
+import { mkdirs } from 'fs-extra';
+import { convertToUnixPath, copyAsync, existsAsync, existsSync, readFileAsync, removeAsync, writeFileAsync } from '../util/fs';
+import { join, resolve } from 'path';
+import { Plugin, PluginType, getPluginPlatform } from '../plugin';
 
 export async function gradleClean(config: Config) {
   await runCommand(`cd ${config.android.platformDir} && ./gradlew clean`);
@@ -16,23 +16,24 @@ export function getAndroidPlugins(allPlugins: Plugin[]): Plugin[] {
 }
 
 export function resolvePlugin(plugin: Plugin): Plugin | null {
+  const platform = 'android';
   if (plugin.manifest && plugin.manifest.android) {
-    let pluginFilesPath = plugin.manifest.android.src ? plugin.manifest.android.src : 'android';
+    let pluginFilesPath = plugin.manifest.android.src ? plugin.manifest.android.src : platform;
     const absolutePath = join(plugin.rootPath, pluginFilesPath, plugin.id);
     // Android folder shouldn't have subfolders, but they used to, so search for them for compatibility reasons
     if (existsSync(absolutePath)) {
-      pluginFilesPath = join('android', plugin.id);
+      pluginFilesPath = join(platform, plugin.id);
     }
     plugin.android = {
       type: PluginType.Core,
-      path: pluginFilesPath
+      path: convertToUnixPath(pluginFilesPath)
     };
   } else if (plugin.xml) {
     plugin.android = {
       type: PluginType.Cordova,
-      path: 'src/android'
+      path: 'src/' + platform
     };
-    if(getIncompatibleCordovaPlugins().includes(plugin.id) || !getPluginPlatform(plugin, 'android')) {
+    if (getIncompatibleCordovaPlugins(platform).includes(plugin.id) || !getPluginPlatform(plugin, platform)) {
       plugin.android.type = PluginType.Incompatible;
     }
   } else {
@@ -97,7 +98,7 @@ export async function editProjectSettingsAndroid(config: Config) {
   const stringsPath = resolve(config.app.rootDir, config.android.platformDir, 'app/src/main/res/values/strings.xml');
   let stringsContent = await readFileAsync(stringsPath, 'utf8');
   stringsContent = stringsContent.replace(/com.getcapacitor.myapp/g, appId);
-  stringsContent = stringsContent.replace(/My App/g, appName.replace(/'/g, "\\'"));
+  stringsContent = stringsContent.replace(/My App/g, appName.replace(/'/g, `\\'`));
 
   await writeFileAsync(stringsPath, stringsContent);
 }

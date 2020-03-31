@@ -1,10 +1,19 @@
+---
+title: Custom Native iOS Code
+description: Custom Native iOS Code
+url: /docs/ios/custom-code
+contributors:
+  - dotnetkow
+  - mlynch
+---
+
 # Custom Native iOS Code
 
-Many apps will want to add custom Swift (or Objective-C) code to implement native features, without the overhead of building and publishing a proper Capacitor plugin.
+<p class="intro">Many apps will want to add custom Swift (or Objective-C) code to implement native features, without the overhead of building and publishing a proper Capacitor plugin.</p>
 
-We strongly recommend using Swift to build plugins, as the iOS ecosystem has embraced Swift and you'll be able to find help and developers more easily, but Objective-C works just as well.
+<p class="intro">We strongly recommend using Swift to build plugins, as the iOS ecosystem has embraced Swift and you'll be able to find help and developers more easily, but Objective-C works just as well.</p>
 
-There are two ways to add custom code depending on whether or not you need to access that code from the WebView:
+<p class="intro">There are two ways to add custom code depending on whether or not you need to access that code from the WebView:</p>
 
 
 ## WebView Accessible Native Code
@@ -35,7 +44,7 @@ Next, you'll need to create a new Objective-C file (with a `.m` extension, _not_
 
 Finally, register the plugin by adding the required Capacitor plugin macros into your new `.m` file:
 
-```objc
+```objectivec
 #import <Capacitor/Capacitor.h>
 
 CAP_PLUGIN(MyPlugin, "MyPlugin",
@@ -43,7 +52,15 @@ CAP_PLUGIN(MyPlugin, "MyPlugin",
 )
 ```
 
-This makes `MyPlugin`, and the `echo` method available to the Capacitor web runtime.
+This makes `MyPlugin`, and the `echo` method available to the Capacitor web runtime like this:
+
+```javascript
+import { Plugins } from "@capacitor/core"
+const { MyPlugin } = Plugins
+
+const result = await MyPlugin.echo({ value: "Hello World!" })
+console.log(result.value)
+```
 
 ## Private Native Code
 

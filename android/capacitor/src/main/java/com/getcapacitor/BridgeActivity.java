@@ -3,18 +3,18 @@ package com.getcapacitor;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.webkit.WebView;
+
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.getcapacitor.android.R;
 import com.getcapacitor.cordova.MockCordovaInterfaceImpl;
 import com.getcapacitor.cordova.MockCordovaWebViewImpl;
 import com.getcapacitor.plugin.App;
 
 import org.apache.cordova.ConfigXmlParser;
-import org.apache.cordova.CordovaInterfaceImpl;
 import org.apache.cordova.CordovaPreferences;
 import org.apache.cordova.PluginEntry;
 import org.apache.cordova.PluginManager;
@@ -52,12 +52,6 @@ public class BridgeActivity extends AppCompatActivity {
     setTheme(getResources().getIdentifier("AppTheme_NoActionBar", "style", getPackageName()));
     setTheme(R.style.AppTheme_NoActionBar);
 
-    boolean defaultDebuggable = false;
-    if (0 != (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE)) {
-      defaultDebuggable = true;
-    }
-
-    WebView.setWebContentsDebuggingEnabled(Config.getBoolean("android.webContentsDebuggingEnabled", defaultDebuggable));
 
     setContentView(R.layout.bridge_layout_main);
 
@@ -71,6 +65,7 @@ public class BridgeActivity extends AppCompatActivity {
     Log.d(LogUtils.getCoreTag(), "Starting BridgeActivity");
 
     webView = findViewById(R.id.webview);
+
     cordovaInterface = new MockCordovaInterfaceImpl(this);
     if (savedInstanceState != null) {
       cordovaInterface.restoreInstanceState(savedInstanceState);
@@ -81,7 +76,7 @@ public class BridgeActivity extends AppCompatActivity {
 
     pluginManager = mockWebView.getPluginManager();
     cordovaInterface.onCordovaInit(pluginManager);
-    bridge = new Bridge(this, webView, initialPlugins, cordovaInterface, pluginManager);
+    bridge = new Bridge(this, webView, initialPlugins, cordovaInterface, pluginManager, preferences);
 
     Splash.showOnLaunch(this);
 
@@ -184,6 +179,7 @@ public class BridgeActivity extends AppCompatActivity {
   @Override
   public void onDestroy() {
     super.onDestroy();
+    this.bridge.onDestroy();
     if (this.mockWebView != null) {
       mockWebView.handleDestroy();
     }

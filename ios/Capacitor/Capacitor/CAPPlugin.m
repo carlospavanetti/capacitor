@@ -36,8 +36,21 @@
   return TRUE;
 }
 
+-(NSString *) getString:(CAPPluginCall *)call field:(NSString *)field defaultValue:(NSString *)defaultValue
+{
+  id idVal = [call.options objectForKey:field];
+  if(![idVal isKindOfClass:[NSString class]]) {
+    return defaultValue;
+  }
+  NSString *value = (NSString *)idVal;
+  if(value == nil) {
+    return defaultValue;
+  }
+  return value;
+}
+
 -(id)getConfigValue:(NSString *)key {
-  return [CAPConfig getPluginConfigValue:self.pluginName :key];
+  return [self.bridge.config getPluginConfigValue:self.pluginName :key];
 }
 
 -(void)load {}
@@ -80,7 +93,7 @@
 
 - (void)notifyListeners:(NSString *)eventName data:(NSDictionary<NSString *,id> *)data retainUntilConsumed:(BOOL)retain {
   NSArray<CAPPluginCall *> *listenersForEvent = [self.eventListeners objectForKey:eventName];
-  if(listenersForEvent == nil) {
+  if(listenersForEvent == nil || [listenersForEvent count] == 0) {
     if (retain == YES) {
       [self.retainedEventArguments setObject:data forKey:eventName];
     }
@@ -105,6 +118,10 @@
   CAPPluginCall *storedCall = [self.bridge getSavedCall:callbackId];
   [self removeEventListener:eventName listener:storedCall];
   [self.bridge releaseCallWithCallbackId:callbackId];
+}
+
+- (void)removeAllListeners:(CAPPluginCall *)call {
+  [self.eventListeners removeAllObjects];
 }
 
 - (NSArray<CAPPluginCall *>*)getListeners:(NSString *)eventName {

@@ -1,3 +1,12 @@
+---
+title: Camera
+description: Camera API
+url: /docs/apis/camera
+contributors:
+  - mlynch
+  - jcesarmobile
+---
+
 <plugin-platforms platforms="pwa,ios,android,electron"></plugin-platforms>
 
 # Camera
@@ -13,6 +22,12 @@ iOS requires the following usage description be added and filled out for your ap
 
 Name: `Privacy - Camera Usage Description`  
 Key: 	`NSCameraUsageDescription`
+
+Name: `Privacy - Photo Library Additions Usage Description`  
+Key: 	`NSPhotoLibraryAddUsageDescription`
+
+Name: `Privacy - Photo Library Usage Description`  
+Key: 	`NSPhotoLibraryUsageDescription`
 
 Read about [Setting iOS Permissions](../../ios/configuration/) in the [iOS Guide](../../ios/) for more information on setting iOS permissions in Xcode
 
@@ -31,6 +46,10 @@ Read about [Setting Android Permissions](../../android/configuration/) in the [A
 
 Additionally, because the Camera API launches a separate Activity to handle taking the photo, you should listen for `appRestoredResult` in the `App` plugin
 to handle any camera data that was sent in the case your app was terminated by the operating system while the Activity was running.
+
+## PWA/Electron Notes
+
+[PWA Elements](/docs/pwa-elements) are required for Camera plugin to work.
 
 ## Example
 
@@ -55,9 +74,9 @@ async takePicture() {
 }
 ```
 
-## Angular example
+## Example Guides
 
-[Follow this guide](../../guides/ionic-framework-app) to implement the Camera API in an Ionic Angular app.
+[Building an Ionic Framework Camera App](/docs/guides/ionic-framework-app)
 
 ## API
 

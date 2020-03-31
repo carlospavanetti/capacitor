@@ -1,3 +1,11 @@
+---
+title: Push Notifications with Firebase in an Ionic/Angular App
+description: Learn how to get Firebase Cloud Messaging working on iOS and Android in an Ionic app
+url: /docs/guides/push-notifications-firebase
+contributors:
+  - bryplano
+---
+
 # Using Push Notifications with Firebase in an Ionic + Angular App
 
 **Web Framework**: Ionic 4 + Angular  
@@ -13,7 +21,7 @@ Building and deploying iOS and Android applications using Capacitor requires a b
 
 To test push notifications on iOS, Apple requires that you have [a paid Apple Developer account](https://developer.apple.com/) and a *physical* iOS device.
 
-## Prepare an Ionic App
+## Prepare an Ionic Capacitor App
 If you have an existing Ionic 4 app, skip this section. If not, let's create an Ionic app first. 
 
 In your preferred terminal, install the latest version of the Ionic CLI:
@@ -22,13 +30,13 @@ In your preferred terminal, install the latest version of the Ionic CLI:
 npm install -g ionic
 ```
 
-Next, let's use the CLI to create a new Ionic 4 app based on the **blank** starter project and call it **capApp**:
+Next, let's use the CLI to create a new Ionic 4 Angular app based on the **blank** starter project and call it **capApp**:
 
 ```bash
-ionic start capApp blank
+ionic start capApp blank --type=angular
 ```
 
-## Add Capacitor
+On the prompt asking to integrate your new app with Capacitor, type `y` and press enter. That will add Capacitor and the Capacitor CLI to our new application.
 
 Once the application has been created successfully, switch to the newly created project directory:
 
@@ -36,13 +44,7 @@ Once the application has been created successfully, switch to the newly created 
 cd capApp/
 ```
 
-Next, let's add Capacitor and the Capacitor CLI to our new application...
-
-```bash
-ionic integrations enable capacitor
-```
-
-... and finish up by running `npx cap init`, which will allow us to fill out our app information.
+Finish up by running `npx cap init`, which will allow us to fill out our app information.
 
 ```bash
 npx cap init
@@ -51,7 +53,7 @@ npx cap init
 ```
 
 ## Building the App & Adding Platforms
-Before adding any native platforms to this project, the app must be built at least once. A web build creates the web assets directory that Capacitor needs (`www` folder in Ionic projects).
+Before adding any native platforms to this project, the app must be built at least once. A web build creates the web assets directory that Capacitor needs (`www` folder in Ionic Angular projects).
 
 ```bash
 ionic build
@@ -90,10 +92,19 @@ export class HomePage implements OnInit {
 ngOnInit() {
     console.log('Initializing HomePage');
 
-    // Register with Apple / Google to receive push via APNS/FCM
-    PushNotifications.register();
+    // Request permission to use push notifications
+    // iOS will prompt user and return if they granted permission or not
+    // Android will just grant without prompting
+    PushNotifications.requestPermission().then( result => {
+      if (result.granted) {
+        // Register with Apple / Google to receive push via APNS/FCM
+        PushNotifications.register();
+      } else {
+        // Show some error
+      }
+    });
 
-    // On succcess, we should be able to receive notifications
+    // On success, we should be able to receive notifications
     PushNotifications.addListener('registration', 
       (token: PushNotificationToken) => {
         alert('Push registration success, token: ' + token.value);
@@ -147,7 +158,17 @@ export class HomePage implements OnInit {
   ngOnInit() {
     console.log('Initializing HomePage');
 
-    PushNotifications.register();
+    // Request permission to use push notifications
+    // iOS will prompt user and return if they granted permission or not
+    // Android will just grant without prompting
+    PushNotifications.requestPermission().then( result => {
+      if (result.granted) {
+        // Register with Apple / Google to receive push via APNS/FCM
+        PushNotifications.register();
+      } else {
+        // Show some error
+      }
+    });
 
     PushNotifications.addListener('registration', 
       (token: PushNotificationToken) => {
@@ -172,6 +193,7 @@ export class HomePage implements OnInit {
         alert('Push action performed: ' + JSON.stringify(notification));
       }
     );
+  }
 }
 ```
 
@@ -276,7 +298,7 @@ Your `Podfile` should look something like this:
 platform :ios, '11.0'
 use_frameworks!
 
-# workaround to avoid Xcode 10 caching of Pods that requires
+# workaround to avoid Xcode caching of Pods that requires
 # Product -> Clean Build Folder after new Cordova plugins installed
 # Requires CocoaPods 1.6 or newer
 install! 'cocoapods', :disable_input_output_paths => true
@@ -341,6 +363,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     return true
   }
 ```
+If you would like to recieve the firebase FCM token from iOS instead of the raw APNS token, you will need to also change your `AppDelegate.didRegisterForRemoteNotificationsWithDeviceToken` code to look like this:
+```swift
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        Messaging.messaging().apnsToken = deviceToken
+        InstanceID.instanceID().instanceID { (result, error) in
+            if let error = error {
+                NotificationCenter.default.post(name: Notification.Name(CAPNotifications.DidFailToRegisterForRemoteNotificationsWithError.name()), object: error)
+            } else if let result = result {
+                NotificationCenter.default.post(name: Notification.Name(CAPNotifications.DidRegisterForRemoteNotificationsWithDeviceToken.name()), object: result.token)
+            }
+        }
+    }
+```
+
 
 ### Upload the APNS Certificate or Key to Firebase
 
