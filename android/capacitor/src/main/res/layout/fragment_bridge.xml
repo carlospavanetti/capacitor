@@ -10,12 +10,4 @@
       android:layout_width="fill_parent"
       android:layout_height="fill_parent" />
 
-  <!--
-  <Button
-      android:id="@+id/button"
-      android:layout_width="342dp"
-      android:layout_height="358dp"
-      android:text="Button" />
-
-  -->
 </FrameLayout>
