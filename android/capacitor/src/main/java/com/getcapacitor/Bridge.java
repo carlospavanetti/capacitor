@@ -58,7 +58,7 @@ import java.util.Arrays;
 import java.util.ArrayList;
 
 
-/**
+/*
  * The Bridge class is the main engine of Capacitor. It manages
  * loading and communicating with all Plugins,
  * proxying Native events to Plugins, executing Plugin methods,
@@ -126,6 +126,11 @@ public class Bridge {
   // Any URI that was passed to the app on start
   private Uri intentUri;
 
+
+  /*
+  public Bridge(Activity context, WebView webView, List<Class<? extends Plugin>> initialPlugins, CordovaInterfaceImpl cordovaInterface, PluginManager pluginManager, String startDir) {
+  }
+   */
 
   /**
    * Create the Bridge with a reference to the main {@link Activity} for the
@@ -787,7 +792,12 @@ public class Bridge {
     return this.localServer.getBasePath();
   }
 
-  public void setServerBasePath(String path){
+  /**
+   * Tell the local server to load files from the given
+   * file path instead of the assets path.
+   * @param path
+   */
+  public void setServerBasePath(String path) {
     localServer.hostFiles(path);
     webView.post(new Runnable() {
       @Override
@@ -797,6 +807,20 @@ public class Bridge {
     });
   }
 
+  /**
+   * Tell the local server to load files from the given
+   * asset path.
+   * @param path
+   */
+  public void setServerAssetPath(String path) {
+    localServer.hostAssets(path);
+    webView.post(new Runnable() {
+      @Override
+      public void run() {
+        webView.loadUrl(appUrl);
+      }
+    });
+  }
 
   public String getLocalUrl() {
     return localUrl;

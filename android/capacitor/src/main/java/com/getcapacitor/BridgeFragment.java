@@ -2,9 +2,11 @@ package com.getcapacitor;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -47,6 +49,7 @@ public class BridgeFragment extends Fragment {
   private CordovaPreferences preferences;
   private MockCordovaWebViewImpl mockWebView;
   private int activityDepth = 0;
+  private String bridgeStartDir;
 
   private String lastActivityPlugin;
 
@@ -82,6 +85,13 @@ public class BridgeFragment extends Fragment {
   protected void load(Bundle savedInstanceState) {
     Log.d(LogUtils.getCoreTag(), "Starting BridgeActivity");
 
+    Bundle args = getArguments();
+    String startDir = null;
+
+    if (args != null) {
+      startDir = getArguments().getString(ARG_START_DIR);
+    }
+
     webView = getView().findViewById(R.id.webview);
     cordovaInterface = new MockCordovaInterfaceImpl(this.getActivity());
     if (savedInstanceState != null) {
@@ -94,6 +104,10 @@ public class BridgeFragment extends Fragment {
     pluginManager = mockWebView.getPluginManager();
     cordovaInterface.onCordovaInit(pluginManager);
     bridge = new Bridge(this.getActivity(), webView, initialPlugins, cordovaInterface, pluginManager);
+
+    if (startDir != null) {
+      bridge.setServerAssetPath(startDir);
+    }
 
     if (savedInstanceState != null) {
       bridge.restoreInstanceState(savedInstanceState);
@@ -108,6 +122,22 @@ public class BridgeFragment extends Fragment {
     preferences = parser.getPreferences();
     preferences.setPreferencesBundle(activity.getIntent().getExtras());
     pluginEntries = parser.getPluginEntries();
+  }
+
+
+  @Override
+  public void onInflate(Context context, AttributeSet attrs, Bundle savedInstanceState) {
+    super.onInflate(context, attrs, savedInstanceState);
+
+    TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.bridge_fragment);
+    CharSequence c = a.getString(R.styleable.bridge_fragment_start_dir);
+
+    if (c != null) {
+      String startDir = c.toString();
+      Bundle args = new Bundle();
+      args.putString(ARG_START_DIR, startDir);
+      setArguments(args);
+    }
   }
 
   @Override
