@@ -127,11 +127,6 @@ public class Bridge {
   private Uri intentUri;
 
 
-  /*
-  public Bridge(Activity context, WebView webView, List<Class<? extends Plugin>> initialPlugins, CordovaInterfaceImpl cordovaInterface, PluginManager pluginManager, String startDir) {
-  }
-   */
-
   /**
    * Create the Bridge with a reference to the main {@link Activity} for the
    * app, and a reference to the {@link WebView} our app will use.
