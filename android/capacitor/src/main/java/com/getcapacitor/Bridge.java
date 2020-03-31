@@ -58,7 +58,7 @@ import java.util.Arrays;
 import java.util.ArrayList;
 
 
-/*
+/**
  * The Bridge class is the main engine of Capacitor. It manages
  * loading and communicating with all Plugins,
  * proxying Native events to Plugins, executing Plugin methods,
